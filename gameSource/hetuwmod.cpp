@@ -31,6 +31,9 @@
 
 using namespace std;
 
+bool HetuwMod::bProjectPlayerTag = false;
+string HetuwMod::playerTag = "";
+
 constexpr int HetuwMod::OBJID_SharpStone;
 constexpr int HetuwMod::OBJID_Fire;
 constexpr int HetuwMod::OBJID_HotCoals;
@@ -50,7 +53,7 @@ double HetuwMod::viewHeightToWidthFactor;
 extern doublePair lastScreenViewCenter;
 doublePair HetuwMod::fromViewToMapCoordsVec;
 
-/* YumLife: hetuw zoom produced inconsistent zoom values when zooming in and
+/* E1L: hetuw zoom produced inconsistent zoom values when zooming in and
  * out partially repeatedly. For familiarity, this table encodes the zoom values
  * produced by hetuw when zooming all the way out once using the mouse wheel
  * (= powf(1.25, zoomLevel)), rounded to the nearest 0.25 for a more consistent
@@ -86,7 +89,7 @@ int HetuwMod::magnetMoveDir = -1;
 int HetuwMod::magnetWrongMoveDir = -1;
 int HetuwMod::magnetMoveCount = 0;
 
-bool HetuwMod::privateModeEnabled = false;
+bool HetuwMod::privateModeEnabled = true;
 
 unsigned char HetuwMod::charKey_Up = 'w';
 unsigned char HetuwMod::charKey_Down = 's';
@@ -106,6 +109,11 @@ unsigned char HetuwMod::charKey_ShowPlayersInRange = 'p';
 unsigned char HetuwMod::charKey_ShowDeathMessages = 254;
 unsigned char HetuwMod::charKey_ShowHomeCords = 'g';
 unsigned char HetuwMod::charKey_ShowHostileTiles = 'u';
+// E1L
+unsigned char HetuwMod::charKey_ShowHostilePlayers = 'i';
+unsigned char HetuwMod::charKey_DrawHiddenVision = 'o';
+// E1L
+
 unsigned char HetuwMod::charKey_xRay = 'x';
 unsigned char HetuwMod::charKey_Search = 'j';
 unsigned char HetuwMod::charKey_TeachLanguage = 'l';
@@ -158,6 +166,10 @@ doublePair HetuwMod::playerNamePos;
 bool HetuwMod::bDrawCords;
 bool HetuwMod::bDrawHostileTiles = true;
 
+//E1L
+bool HetuwMod::bDrawHostilePlayers = true;
+bool HetuwMod::bDrawHiddenVision = true;
+//E1L
 bool HetuwMod::bWriteLogs = true;
 
 double HetuwMod::curStepTime;
@@ -247,7 +259,7 @@ double HetuwMod::timeLastLanguage = 0;
 vector<char*> HetuwMod::sayBuffer;
 double HetuwMod::timeLastSay = 0;
 bool HetuwMod::clearSayBuffer;
-float HetuwMod::sayDelay = 2.1;
+float HetuwMod::sayDelay = 0;
 
 int *HetuwMod::becomesFoodID;
 SimpleVector<int> HetuwMod::yummyFoodChain;
@@ -280,12 +292,12 @@ int HetuwMod::serverPort = 0;
 
 bool HetuwMod::addBabyCoordsToList = false;
 
-bool HetuwMod::bRemapStart = true;
+bool HetuwMod::bRemapStart = false;
 bool HetuwMod::bDrawHungerWarning = false;
 
-int HetuwMod::delayReduction = 0;
+int HetuwMod::delayReduction = 100;
 
-int HetuwMod::zoomLimit = 10;
+int HetuwMod::zoomLimit = 11;
 
 std::vector<HetuwMod::HttpRequest*> HetuwMod::httpRequests;
 
@@ -302,8 +314,8 @@ bool HetuwMod::sendKeyEvents = false;
 bool HetuwMod::bDrawBiomeInfo = false;
 
 bool HetuwMod::minitechEnabled = true;
-bool HetuwMod::minitechStayMinimized = false;
-bool HetuwMod::minitechTooltipsEnabled = true;
+bool HetuwMod::minitechStayMinimized = true;
+bool HetuwMod::minitechTooltipsEnabled = false;
 
 bool HetuwMod::autoDieFaster = false;
 
@@ -788,7 +800,7 @@ void HetuwMod::initSettings() {
 		"//  - The OHOLCurse button\n"
 		"//  - The Services button\n"
 		"//\n"
-		"// Any future opt-out networked features in the official selb/YumLife\n"
+		"// Any future opt-out networked features in the official selb/E1L\n"
 		"// distribution will respect this option.\n";
 	yumConfig::registerSetting("private_mode", privateModeEnabled, {preComment: privateModeInstructions});
 
@@ -811,7 +823,10 @@ void HetuwMod::initSettings() {
 	yumConfig::registerSetting("key_show_deathmessages", charKey_ShowDeathMessages);
 	yumConfig::registerSetting("key_show_homecords", charKey_ShowHomeCords);
 	yumConfig::registerSetting("key_show_hostiletiles", charKey_ShowHostileTiles);
-
+	//E1L
+	yumConfig::registerSetting("init_show_hostileplayers", bDrawHostilePlayers);
+	yumConfig::registerSetting("init_show_vision", bDrawHiddenVision);
+	//E1L
 	yumConfig::registerSetting("key_remembercords", charKey_CreateHome, {preComment: "\n"});
 	yumConfig::registerSetting("key_fixcamera", charKey_FixCamera);
 	yumConfig::registerSetting("key_xray", charKey_xRay);
@@ -883,7 +898,7 @@ void HetuwMod::initSettings() {
 	yumConfig::registerSetting("automatic_data_update", bAutoDataUpdate, {preComment: "\n"});
 	yumConfig::registerSetting("hetuw_log", bWriteLogs, {postComment: " // will create a log file '" hetuwLogFileName "' that logs different events"});
 
-	yumConfig::registerScaledSetting("chat_delay", sayDelay, 10, {postComment: " // wait atleast X time before sending the next text (10 = 1 second) - set it to 0 to deactivate it"});
+	yumConfig::registerScaledSetting("chat_delay", sayDelay, 0, {postComment: " // wait atleast X time before sending the next text (10 = 1 second) - set it to 0 to deactivate it"});
 
 	yumConfig::registerSetting("draw_mushroom_effect", bRemapStart, {preComment: "\n"});
 	yumConfig::registerSetting("draw_hunger_warning", bDrawHungerWarning);
@@ -1281,6 +1296,27 @@ void HetuwMod::writeLineToLogs(string name, string data) {
 	ofstream ofs( hetuwLogFileName, ofstream::out | ofstream::app );
 	ofs << time(NULL) << hetuwLogSeperator << name << hetuwLogSeperator << data << endl;
 	ofs.close();
+}
+
+void HetuwMod::WriteToMessageChain(string data) {
+    if (bWriteLogs) return;
+
+    bool hasSay = data.find("SAY") != string::npos;
+
+    if (!hasSay) {
+
+        if (data.find("LOGIN") != string::npos) {
+            ofstream ofs(hetuwLogFileName, ofstream::out | ofstream::trunc);
+            return;
+        }
+
+        if (data.find("RLOGIN") != string::npos) {
+            return;
+        }
+    }
+
+    ofstream ofs(hetuwLogFileName, ofstream::out | ofstream::app);
+    ofs << data << "|";
 }
 
 HetuwMod::RainbowColor::RainbowColor() {
@@ -1852,14 +1888,14 @@ homeTypeName homeTypeNames[] = {
 };
 
 const char *HetuwMod::getHomeTypeName(homePosType type) {
-	for (int i=0; i<sizeof(homeTypeNames)/sizeof(homeTypeName); i++) {
+	for (size_t i = 0; i < sizeof(homeTypeNames)/sizeof(homeTypeName); i++) {
 		if (homeTypeNames[i].type == type) return homeTypeNames[i].name;
 	}
 	return "unknowntype";
 }
 
 HetuwMod::homePosType HetuwMod::getHomeTypeFromName(const char *name) {
-	for (int i=0; i<sizeof(homeTypeNames)/sizeof(homeTypeName); i++) {
+	for (size_t i = 0; i < sizeof(homeTypeNames)/sizeof(homeTypeName); i++) {
 		if (strcmp(homeTypeNames[i].name, name) == 0) return homeTypeNames[i].type;
 	}
 	return hpt_custom;
@@ -2234,12 +2270,20 @@ void HetuwMod::livingLifeDraw() {
 
 	if (bDrawGrid) drawGrid();
 	drawAge();
+	drawTemp();
+	drawCurseToken();
+	drawHunger();
+	drawSpeed();
+	drawOurStatus();
+	drawCombatIndicator();
+	if(bProjectPlayerTag) projectPlayerTag();
 	if (bDrawCords) drawCords();
 	if (iDrawPlayersInRangePanel > 0) drawPlayersInRangePanel();
 	if (searchWordList.size() > 0) drawSearchList();
 	if (bDrawDeathMessages) drawDeathMessages();
 	if (bDrawHomeCords) drawHomeCords();
 	if (bDrawHostileTiles) drawHostileTiles();
+	if (bDrawHiddenVision) drawHiddenVision();
 	if (searchWordList.size() > 0) drawSearchTiles();
 	if (bDrawSelectedPlayerInfo && iDrawNames > 0 && !bHidePlayers) drawHighlightedPlayer();
 	if (bDrawPhotoRec) drawPhotoRec(recTakePhoto);
@@ -2253,6 +2297,7 @@ void HetuwMod::livingLifeDraw() {
 	}
 	if (bNextCharForHome) drawCustomCoordHelpText();
 	if (bDrawHelp) drawHelp();
+	if (bDrawHostilePlayers) drawHostilePlayers();
 
 	//setDrawColor( 1.0, 0, 0, 1.0 );
 	//drawRect( debugRecPos, 10, 10 );
@@ -3619,6 +3664,19 @@ bool HetuwMod::livingLifeKeyDown(unsigned char inASCII) {
 		bDrawHostileTiles = !bDrawHostileTiles;
 		return true;
 	}
+	// E1L
+	if (!bDrawMap && !commandKey && isCharKey(inASCII, charKey_ShowHostilePlayers))
+	{
+		bDrawHostilePlayers = !bDrawHostilePlayers;
+		return true;
+	}
+	if (!bDrawMap && !commandKey && isCharKey(inASCII, charKey_DrawHiddenVision))
+	{
+		bDrawHiddenVision = !bDrawHiddenVision;
+		return true;
+	}
+	// E1L
+
 	if (!commandKey && isCharKey(inASCII, charKey_xRay)) {
 		if (bHoldDownTo_XRay) bxRay = true;
 		else bxRay = !bxRay;
@@ -4323,10 +4381,10 @@ static char getRaceLetter(ObjectRecord *obj) {
 struct raceInfo { char race; const char *name; float rgb[3]; };
 
 static raceInfo oholRaces[] = {
-	{ 'A', "DESERT", { 0.8f, 0.8f, 0.0f } },
-	{ 'C', "JUNGLE", { 0.0f, 0.8f, 0.0f } },
-	{ 'D', "LANGUAGE", { 0.0f, 0.4f, 0.8f } },
-	{ 'F', "ARCTIC", { 0.8f, 0.8f, 0.8f } }
+	{ 'A', "BLACK", { 0.8f, 0.8f, 0.0f } },
+	{ 'C', "BROWN", { 0.0f, 0.8f, 0.0f } },
+	{ 'D', "WHITE", { 0.0f, 0.4f, 0.8f } },
+	{ 'F', "GINGER", { 0.8f, 0.8f, 0.8f } }
 };
 
 static void getRaceColor(char raceLetter, float rgba[4]) {
@@ -5083,6 +5141,7 @@ void HetuwMod::drawPlayersInRangePanel() {
 
 }
 
+//MENU WAVE
 void HetuwMod::drawSearchList() {
 	int mouseX, mouseY;
 	livingLifePage->hetuwGetMouseXY( mouseX, mouseY );
@@ -5150,21 +5209,615 @@ void HetuwMod::drawSearchList() {
 		}
 	}
 }
-
 void HetuwMod::drawAge() {
-	setDrawColor( 0, 0, 0, 1 );
 	doublePair drawPos;
 	char sBuf[32];
-	int age = (int)(ourAge*10);
-	int ageDecimal = age - int(age*0.1)*10;
-	age = (int)((age-ageDecimal)*0.1);
-	snprintf(sBuf, sizeof(sBuf), "%c  %i.%i", ourGender, age, ageDecimal);
+
+	int age = (int)(ourAge * 10);
+	int ageDecimal = age - int(age * 0.1) * 10;
+	age = (int)((age - ageDecimal) * 0.1);
+
+    const char* genderText = "UNKNOWN";
+
+    if (ourGender == 'F') {
+        genderText = "FEMALE";
+    }
+    else if (ourGender == 'M') {
+        genderText = "MALE";
+    }
+
+	setDrawColor(1, 1, 1, 1.00f);
+    if (ourAge >= 55.0) {
+
+		genderText = "ELDER";
+    }
+    else if (ourAge <= 40.0 && ourGender == 'F') {
+        genderText = "INFERTILE";
+    }
+
+
+	
+
+	snprintf(sBuf, sizeof(sBuf), "%s/%i.%i", genderText, age, ageDecimal);
+
 	drawPos = lastScreenViewCenter;
-	drawPos.x += 290;
-	drawPos.y -= viewHeight/2 - 25;
-	livingLifePage->hetuwDrawWithHandwritingFont( sBuf, drawPos );
+
+    doublePair pos{};
+    pos.x = lastScreenViewCenter.x - 750 * guiScale;
+    pos.y = lastScreenViewCenter.y - (viewHeight / 2.0) + 50 * guiScale;
+
+	livingLifePage->hetuwDrawScaledHandwritingFont(sBuf, pos, guiScale * 0.8, alignLeft);
 }
 
+void HetuwMod::drawTemp() {
+    if (ourLiveObject == NULL) return;
+
+    char sBuf[64];
+
+
+    float pps = ourLiveObject->foodDrainTime;
+
+	float r, g, b;
+
+
+	r = 1;
+	g = 1;
+	b = 1;
+
+    setDrawColor(r, g, b, 1.0f);
+
+
+    doublePair pos{};
+    pos.x = lastScreenViewCenter.x - 750 * guiScale;
+    pos.y = lastScreenViewCenter.y - (viewHeight / 2.0) + 75 * guiScale;
+
+    snprintf(sBuf, sizeof(sBuf), "TEMP: %.2f/S", pps);
+
+    livingLifePage->hetuwDrawScaledHandwritingFont(sBuf, pos, guiScale * 0.8, alignLeft);
+}
+
+void HetuwMod::drawCurseToken()
+{
+
+    char sBuf[32];
+    std::string text;
+    float r = 0.8f, g = 0.8f, b = 1.0f;
+
+    if (ourLiveObject->excessCursePoints > 0) {
+        text = "DONKEYTOWN";
+        r = 0.85f; g = 0.20f; b = 0.95f;  
+    }
+    else if (ourLiveObject->curseTokenCount > 0) {
+        snprintf(sBuf, sizeof(sBuf), "CURSES: %d", ourLiveObject->curseTokenCount);
+        text = sBuf;
+        r = 0.85f; g = 0.55f; b = 1.00f;
+    }
+    else {
+        text = "CURSES: 0";
+        r = 1.00f; g = 0.60f; b = 0.90f;  
+    }
+
+    doublePair pos{};
+    pos.x = lastScreenViewCenter.x - 750 * guiScale;
+    pos.y = lastScreenViewCenter.y - (viewHeight / 2.0) + 25 * guiScale;
+
+    setDrawColor(r, g, b, 1.0f);
+    livingLifePage->hetuwDrawScaledHandwritingFont(text.c_str(), pos, guiScale * 0.82f, alignLeft);
+}
+
+void HetuwMod::drawHunger()
+{
+
+
+    char sBuf[128];
+	
+    int foodstore = ourLiveObject->foodStore;
+    int foodcap   = ourLiveObject->foodCapacity;
+    int bonus     = livingLifePage ? livingLifePage->hetuwGetYumBonus() : 0;
+    int totalPips = foodstore + bonus;
+
+    static double countdown = 0.0;
+    static double lastTime  = 0.0; 
+    static int    lastTotal = -1;
+    static bool   synced    = false;
+
+    double now = game_getCurrentTime(); // uses now to track time passing
+	
+    if (lastTime == 0.0) lastTime = now;
+
+    double dtime = now - lastTime;
+    lastTime = now;
+
+    if (synced)
+    {
+        countdown -= dtime;
+        if (countdown < 0.0) countdown = 0.0;
+    }
+
+    if (totalPips != lastTotal)
+    {
+        countdown = ourLiveObject->foodDrainTime;
+        if (countdown < 0.0) countdown = 0.0;
+        lastTotal = totalPips;
+        synced = true;
+    }
+    if (ourLiveObject->age < 3)
+    {
+        if (foodstore <= 2)
+            setDrawColor(1, 0, 0, 1);
+        else if (totalPips <= foodcap)
+            setDrawColor(0.7f, 1.0f, 0.7f, 1);
+        else
+            setDrawColor(1, 1, 1, 1);
+    }
+    else
+    {
+        if (totalPips > foodcap)
+            setDrawColor(0.7f, 1.0f, 0.7f, 1);
+        else if (totalPips == foodcap)
+            setDrawColor(0.7f, 1.0f, 0.7f, 1);
+        else if (totalPips <= 2)
+            setDrawColor(1, 0, 0, 1);
+        else if (totalPips <= 8)
+            setDrawColor(1, 0.5f, 0, 1);
+        else
+            setDrawColor(1, 1, 1, 1);
+
+        if (totalPips == 0)
+            setDrawColor(1, 0, 0, 1);
+    }
+
+    if (totalPips == 0 && synced && countdown > 0.0)
+    {
+        snprintf(sBuf, sizeof(sBuf), "(%.2f)", countdown);
+    }
+    else if (bonus > 0)
+    {
+        if (synced && countdown > 0.0)
+            snprintf(sBuf, sizeof(sBuf), "%d/%d + %d (%.2f)", foodstore, foodcap, bonus, countdown);
+        else
+            snprintf(sBuf, sizeof(sBuf), "%d/%d + %d (///)", foodstore, foodcap, bonus);
+    }
+    else
+    {
+        if (synced && countdown > 0.0)
+            snprintf(sBuf, sizeof(sBuf), "%d/%d (%.2f)", foodstore, foodcap, countdown);
+        else
+            snprintf(sBuf, sizeof(sBuf), "%d/%d (///)", foodstore, foodcap);
+    }
+    doublePair pos{};
+    pos.x = lastScreenViewCenter.x;
+    pos.y = lastScreenViewCenter.y - (viewHeight / 2.0) + 50 * guiScale;
+
+
+
+    livingLifePage->hetuwDrawScaledHandwritingFont(sBuf, pos, guiScale * 0.8, alignCenter);
+}
+void HetuwMod::drawSpeed()
+{
+    char sBuf[64];
+
+    float speed = 0.0f;
+
+
+    if (ourLiveObject->heldByAdultID != -1)
+    {
+        for (int i = 0; i < gameObjects->size(); i++)
+        {
+            LiveObject *o = gameObjects->getElement(i);
+            if (o && o->id == ourLiveObject->heldByAdultID)
+            {
+                speed = o->currentGridSpeed;  
+                break;
+            }
+        }
+    }
+    else
+    {
+        speed = ourLiveObject->currentGridSpeed;  
+    }
+
+    
+    snprintf(sBuf, sizeof(sBuf), "MOVEMENT: %.2f/TPS", speed);
+
+    doublePair pos{};
+    pos.x = lastScreenViewCenter.x - 750 * guiScale;
+    pos.y = lastScreenViewCenter.y - (viewHeight / 2.0) + 100 * guiScale;
+
+    setDrawColor(1, 1, 1, 1);
+    livingLifePage->hetuwDrawScaledHandwritingFont(sBuf, pos, guiScale * 0.8, alignLeft);
+}
+
+void HetuwMod::drawOurStatus()
+{
+	ObjectRecord *obj = getObject(ourLiveObject->holdingID);
+    if (ourLiveObject == NULL) return;
+
+    char sBuf[255];
+    std::string status = "///////////////////";
+    setDrawColor(0.7, 1, 0.7, 1);
+
+    if (ourLiveObject->sick)
+    {
+        status = "YELLOW FEVER";
+        setDrawColor(1, 0.5f, 0, 1);
+    }
+    else if (ourLiveObject->holdingID > 0)
+    {
+		if (obj &&
+		(strstr(obj->description, "Arrow Wound") != NULL ||
+		strstr(obj->description, "Arrowhead Wound") != NULL  ||
+		strstr(obj->description, "Knife Wound") != NULL))
+		{
+			status = "UNHEALABLE WOUND";
+        	setDrawColor(1, 0, 0, 1);
+		}
+		else if (ourLiveObject->dying)
+		{
+			status = "HEALABLE WOUND";
+			setDrawColor(1, 0.4, 0, 1);
+		}
+        else if (obj != NULL)
+        {
+            char *stringUpper = stringToUpperCase(obj->description);
+            char descrBuf[256] = {0};
+
+            HetuwMod::objGetDescrWithoutHashtag(stringUpper, descrBuf, sizeof(descrBuf));
+
+            snprintf(sBuf, sizeof(sBuf), "%s", descrBuf);
+            status = sBuf;
+
+            setDrawColor(0.7, 1, 0.7, 1);
+            delete[] stringUpper;
+        }
+    }
+    else if (ourLiveObject->name != NULL && ourLiveObject->name[0] != '\0')
+    {
+		setDrawColor(0.7, 1, 0.7, 1);
+        status = ourLiveObject->name;
+    }
+
+    snprintf(sBuf, sizeof(sBuf), "- %s -", status.c_str());
+
+    doublePair tipPos;
+    tipPos.x = lastScreenViewCenter.x;
+    tipPos.y = lastScreenViewCenter.y - (viewHeight / 2) + 75 * guiScale;
+
+    livingLifePage->hetuwDrawScaledHandwritingFont(
+        sBuf, tipPos, guiScale * 0.8f, alignCenter);
+}
+
+static bool justKilled(int holdingID)
+{
+    static const std::unordered_set<int> murderWeapons{749, 750, 3048};
+    return murderWeapons.count(holdingID) > 0;
+}
+void HetuwMod::drawCombatIndicator()
+{
+    int ourMouthEmot = ourLiveObject->currentEmot ? ourLiveObject->currentEmot->mouthEmot : -1;
+    bool weAreAttacking = (ourMouthEmot == 3066);
+    bool holdingMurderWeapon = justKilled(ourLiveObject->holdingID);
+
+    ourLiveObject->killMode = weAreAttacking;
+
+    bool someoneChasingUs = false;
+    bool someoneKillable = false;
+    bool weAreBeingTargetedForKill = false;
+
+    int chasingCount = 0;
+
+    for (int i = 0; i < gameObjects->size(); ++i)
+    {
+        LiveObject *o = gameObjects->getElement(i);
+        if (!o || o->id == ourLiveObject->id) continue;
+
+
+        int theirMouthEmot = o->currentEmot ? o->currentEmot->mouthEmot : -1;
+
+        if (o->chasingUs) {
+            someoneChasingUs = true;
+            chasingCount++;
+        }
+
+        if (o->chasingUs && theirMouthEmot == 3066 && ourMouthEmot == 3815) {
+            weAreBeingTargetedForKill = true;
+        }
+
+        if (weAreAttacking && theirMouthEmot == 3815) {
+            someoneKillable = true;
+        }
+    }
+
+    static double combatTimer = 0.0;
+    static double vulnTimer   = 0.0;
+    static double dangerTimer = 0.0;
+    static double targetTimer = 0.0;
+
+    static bool prevCombat = false;
+    static bool prevDanger = false;
+    static bool prevTarget = false;
+
+    static double lastUpdate = 0.0;
+
+    double now = game_getCurrentTime();
+    if (lastUpdate == 0.0) lastUpdate = now;
+    double dt = now - lastUpdate;
+    lastUpdate = now;
+
+    bool inActiveCombat = weAreAttacking || someoneKillable;
+
+    if (inActiveCombat && !prevCombat) {
+        combatTimer = 12.0;
+    }
+    if (inActiveCombat) {
+        combatTimer = std::max(0.0, combatTimer - dt);
+    } else {
+        combatTimer = 0.0;
+    }
+
+    if (holdingMurderWeapon) {
+        if (vulnTimer <= 0.0) {
+            vulnTimer = 60.0;
+        }
+        vulnTimer = std::max(0.0, vulnTimer - dt);
+    } else {
+        vulnTimer = 0.0;
+    }
+
+    if (weAreBeingTargetedForKill && !prevDanger) {
+        dangerTimer = 12.0;
+    }
+    if (weAreBeingTargetedForKill) {
+        dangerTimer = std::max(0.0, dangerTimer - dt);
+    }
+
+    if (someoneChasingUs && !prevTarget) {
+        targetTimer = 12.0;
+    }
+    if (someoneChasingUs) {
+        targetTimer = std::max(0.0, targetTimer - dt);
+    }
+
+    prevCombat = inActiveCombat;
+    prevDanger = weAreBeingTargetedForKill;
+    prevTarget = someoneChasingUs;
+
+    std::string status;
+    float r = 1.0f, g = 1.0f, b = 1.0f;
+
+    if (holdingMurderWeapon) {
+        status = "VULNERABLE";
+        r = 1.00f; g = 0.90f; b = 0.00f;
+    }
+    else if (weAreBeingTargetedForKill) {
+        status = "DANGER";
+        r = 1.00f; g = 0.15f; b = 0.00f;
+    }
+    else if (someoneKillable) {
+        status = "KILLABLE";
+        r = 1.00f; g = 0.40f; b = 0.25f;
+    }
+    else if (someoneChasingUs) {
+        status = "TARGETED";
+        r = 1.00f; g = 0.65f; b = 0.00f;
+    }
+    else if (weAreAttacking) {
+        status = "ATTACKING";
+        r = 0.95f; g = 0.30f; b = 0.30f;
+    }
+    else {
+        status = "SAFE";
+        r = 0.70f; g = 1.00f; b = 0.70f;
+    }
+
+    char sBuf[128];
+
+    if (holdingMurderWeapon && vulnTimer > 0.1) {
+        snprintf(sBuf, sizeof(sBuf),
+            "%s %.1f/-/ON YOU: %d",
+            status.c_str(), vulnTimer, chasingCount);
+    }
+    else if (dangerTimer > 0.1) {
+        snprintf(sBuf, sizeof(sBuf),
+            "%s %.1f/-/ON YOU: %d",
+            status.c_str(), dangerTimer, chasingCount);
+    }
+    else if (targetTimer > 0.1) {
+        snprintf(sBuf, sizeof(sBuf),
+            "%s %.1f/-/ON YOU: %d",
+            status.c_str(), targetTimer, chasingCount);
+    }
+    else if (combatTimer > 0.1) {
+        snprintf(sBuf, sizeof(sBuf),
+            "%s %.1f/-/ON YOU: %d",
+            status.c_str(), combatTimer, chasingCount);
+    }
+    else {
+        snprintf(sBuf, sizeof(sBuf),
+            "%s/-/ON YOU: %d",
+            status.c_str(), chasingCount);
+    }
+
+    doublePair pos = {
+        lastScreenViewCenter.x,
+        lastScreenViewCenter.y - (viewHeight / 2) + 25 * guiScale
+    };
+
+    setDrawColor(r, g, b, 1.0f);
+    livingLifePage->hetuwDrawScaledHandwritingFont(
+        sBuf, pos, guiScale * 0.82f, alignCenter);
+}
+
+
+void HetuwMod::drawHiddenVision()
+{
+	if (!bDrawHiddenVision)
+		return;
+	if (!ourLiveObject) return;
+
+	int radius = 32;
+	int startX = ourLiveObject->xd - radius;
+	int endX = ourLiveObject->xd + radius;
+	int startY = ourLiveObject->yd - radius;
+	int endY = ourLiveObject->yd + radius;
+
+	for (int x = startX; x < endX; x++)
+	{
+		for (int y = startY; y < endY; y++)
+		{
+			int objId = livingLifePage->hetuwGetObjId(x, y);
+			if (objId == 630 || objId == 647 || objId == 648)
+			{
+				setDrawColor(0, 1, 0, 0.3);
+				drawTileRect(lround(x), lround(y));
+			}
+			else if (objId == 649 || objId == 650)
+			{
+				setDrawColor(1, 1, 1, 0.2);
+				drawTileRect(lround(x), lround(y));
+			}
+
+			ObjectRecord *o = getObject(objId);
+			if (o && strstr(o->description, "Unfueled") != NULL)
+			{
+				setDrawColor(0.5f, 0.0f, 0.0f, 0.3f);
+				drawTileRect(x, y);
+			}
+			
+		}
+	}
+}
+
+// LIVINGLIFESCREEN
+void HetuwMod::drawHostilePlayers()
+{
+    if (bHidePlayers)
+        return;
+
+    if (gameObjects == nullptr)
+        return;
+
+    if (ourLiveObject == nullptr)
+        return;
+
+    const int count = gameObjects->size();
+
+    for (int i = 0; i < count; i++)
+    {
+        LiveObject *o = gameObjects->getElement(i);
+
+        if (o == nullptr)
+            continue;
+
+        ObjectRecord *heldObject = nullptr;
+
+        if (o->holdingID >= 0)
+        {
+            heldObject = getObject(o->holdingID);
+        }
+
+        int tileX = lrint(o->currentPos.x);
+        int tileY = lrint(o->currentPos.y);
+
+        int radius = 0;
+
+        if (heldObject != nullptr &&
+            heldObject->deadlyDistance > 0)
+        {
+            radius = heldObject->deadlyDistance;
+        }
+
+        if (radius <= 0)
+        {
+            if (o->heldByAdultID == -1)
+            {
+                if (o->id == ourLiveObject->id)
+                {
+                    setDrawColor(0, 0, 0, 0.25f);
+                }
+                else
+                {
+                    setDrawColor(0, 0, 1, 0.25f);
+                }
+
+                drawTileRect(tileX, tileY);
+            }
+        }
+        else
+        {
+            for (int x = tileX - radius; x <= tileX + radius; x++)
+            {
+                for (int y = tileY - radius; y <= tileY + radius; y++)
+                {
+                    int dx = x - tileX;
+                    int dy = y - tileY;
+
+                    if (dx * dx + dy * dy <= radius * radius)
+                    {
+                        if (o->id == ourLiveObject->id)
+                        {
+                            setDrawColor(0, 0, 0, 0.25f);
+                        }
+                        else if (o->chasingUs)
+                        {
+                            if ((stepCount / 70) % 2 == 0)
+                            {
+                                setDrawColor(1, 0, 0, 0.30f);
+                            }
+                            else
+                            {
+                                setDrawColor(1, 1, 0, 0.30f);
+                            }
+                        }
+                        else
+                        {
+                            setDrawColor(1, 0, 0, 0.25f);
+                        }
+
+                        drawTileRect(x, y);
+                    }
+                }
+            }
+        }
+    }
+}
+
+double computeCurrentAge( LiveObject *inObj );
+int getSayLimit( double inAge );
+
+void HetuwMod::projectPlayerTag() {
+    if (!HetuwMod::bProjectPlayerTag || playerTag.empty()) return;
+
+    LiveObject* our = livingLifePage->getOurLiveObject();
+
+    int sayLimit = getSayLimit(computeCurrentAge(our));
+    if ((int)playerTag.length() > sayLimit) {
+        playerTag = playerTag.substr(0, sayLimit);
+    }
+
+    static double nextProjectTime = 0.0;
+    double now = game_getCurrentTime();
+
+    if (nextProjectTime > now + 60.0) {
+        nextProjectTime = now;
+    }
+
+    if (now >= nextProjectTime) {
+        if (our->currentSpeech == NULL || our->speechFadeETATime <= now) {
+            livingLifePage->hetuwSay(playerTag.c_str());
+
+            double speechDuration = 3.0 + (playerTag.length() / 5.0);
+            
+            if (our->currentSpeech != NULL && our->speechFadeETATime > now) {
+                nextProjectTime = our->speechFadeETATime + 7.0;
+            } else {
+                nextProjectTime = now + speechDuration + 7.0;
+            }
+        } else {
+            nextProjectTime = now + 1.0;
+        }
+    }
+}
 void HetuwMod::drawCords() {
 	int x = round(ourLiveObject->currentPos.x+cordOffset.x);
 	int y = round(ourLiveObject->currentPos.y+cordOffset.y);
@@ -5359,6 +6012,22 @@ void HetuwMod::drawHelp() {
 	livingLifePage->hetuwDrawScaledHandwritingFont( str, drawPos, guiScale );
 	drawPos.y -= lineHeight;
 
+	//E1L
+	if (bDrawHostilePlayers)
+		setHelpColorSpecial();
+	else
+		setHelpColorNormal();
+	snprintf(str, sizeof(str), "%c TOGGLE SHOW HOSTILE PLAYERS", toupper(charKey_ShowHostilePlayers));
+	livingLifePage->hetuwDrawScaledHandwritingFont(str, drawPos, guiScale);
+	drawPos.y -= lineHeight;
+	if (bDrawHiddenVision)
+		setHelpColorSpecial();
+	else
+		setHelpColorNormal();
+	snprintf(str, sizeof(str), "SHIFT+%c TOGGLE SHOW HIDDEN VISION", toupper(charKey_DrawHiddenVision));
+	livingLifePage->hetuwDrawScaledHandwritingFont(str, drawPos, guiScale);
+	drawPos.y -= lineHeight;
+	//E1L
 	if (bxRay) setHelpColorSpecial();
 	else setHelpColorNormal();
 	snprintf(str, sizeof(str), "%c X-RAY VISION", toupper(charKey_xRay));
@@ -5614,3 +6283,18 @@ char *HetuwMod::hashTwinCode( char *twinCode ) {
 		return stringDuplicate(twinCode);
 	return computeSHA1Digest(twinCode);
 	}
+
+	doublePair HetuwMod::drawUIRectFollowCamera(doublePair offsetFromBottomCenter, float uiWidth, float uiHeight, float r, float g, float b, float a){
+	setDrawColor(r, g, b, a);
+
+	doublePair panelPos;
+	panelPos.x = lastScreenViewCenter.x + offsetFromBottomCenter.x * guiScale;
+	panelPos.y = lastScreenViewCenter.y - (HetuwMod::viewHeight / 2) + (offsetFromBottomCenter.y * guiScale);
+
+	float barWidth = uiWidth * guiScale;
+	float barHeight = uiHeight * guiScale;
+
+	drawRect(panelPos, barWidth / 2, barHeight / 2);
+
+	return panelPos;
+}

@@ -1222,6 +1222,10 @@ class LivingLifePage : public GamePage, public ActionListener {
 
 
         void checkForStatueAtPosition( int inWorldX, int inWorldY );
+
+        void drawFoodYumStatus();
+        void drawCravingStatus();
+        void drawCravingBonus(); 
         
     };
 

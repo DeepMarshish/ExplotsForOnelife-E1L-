@@ -20,14 +20,13 @@ void LoadingPage::draw( doublePair inViewCenter,
                         double inViewSize ) {
 
     doublePair labelPos = { 0, 0 };
-
-    drawMessage( "LOADING", labelPos, false );
-
+    drawMessage( "EXPLOITS FOR ONE LIFE CLIENT", labelPos, false );
     labelPos.y = -100;
     
     drawMessage( mPhaseName, labelPos, false );
 
-
+    labelPos.y = 100;
+    drawMessage( "[IP LOGGING ADVISORY, PLAY WITH A VPN OR RISK ACCOUNT TERMINATION]", labelPos, false );
     if( mShowProgress ) {
         
         // border

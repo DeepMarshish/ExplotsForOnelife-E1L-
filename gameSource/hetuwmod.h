@@ -2,11 +2,11 @@
 #define HETUWMOD_H
 
 #define hetuwWaitingText "press %c in game for help"
-#define hetuwSettingsFileName "yumlife.cfg"
-#define hetuwLogFileName "yumlog.txt"
+#define hetuwSettingsFileName "exploits1life.cfg"
+#define hetuwLogFileName "exploits1lifeLog.txt"
 #define hetuwLogSeperator " | " // needs to be 3 char long
 #define hetuwFakeCoord 1977 // the fake coordinate value the server sends for out-of-range players
-#define hetuwGetNewestVersionFromGithub "get newest version from github https://github.com/selb/YumLife/releases"
+#define hetuwGetNewestVersionFromGithub "get newest version from github https://github.com/selb/E1L/releases"
 #define hetuwPhotoSize 400
 
 #define hetuwLinkMainServer "bigserver2.onehouronelife.com"
@@ -312,6 +312,8 @@ public:
 	static unsigned char charKey_ShowDeathMessages;
 	static unsigned char charKey_ShowHomeCords;
 	static unsigned char charKey_ShowHostileTiles;
+	static unsigned char charKey_ShowHostilePlayers;
+	static unsigned char charKey_DrawHiddenVision;
 	static unsigned char charKey_xRay;
 	static unsigned char charKey_Search;
 	static unsigned char charKey_TeachLanguage;
@@ -402,6 +404,7 @@ public:
 	static bool bWriteLogs;
 	static void createNewLogFile();
 	static void writeLineToLogs(string name, string str);
+	static void WriteToMessageChain(string str);
 
 	static void init();
 	static void initHelpText();
@@ -673,7 +676,14 @@ public:
 	static bool experimentBabyChat;
 	static bool experimentYoinkClothes;
 	static bool experimentForgiveName;
-
+	// E1L TERRATORY
+		//basic functions
+	static doublePair drawUIRectFollowCamera( doublePair offsetFromBottomCenter, float uiWidth, float uiHeight, float r = 0.0f, float g = 0.0f, float b = 0.0f, float a = 1.0 );
+		//basic functions
+		static void projectPlayerTag();
+		static bool bProjectPlayerTag;
+		static string playerTag;
+	// E1L TERRATORY
 private:
 
 	static void updateStateStore();
@@ -693,9 +703,27 @@ private:
 
 	static bool bDrawMap;
 	static void drawMap();
-
+ 
+	// E1L TERRATORY
+		//basic functions
 	static void drawAge();
+	static void drawTemp();
+	static void drawCurseToken();
+	static void drawHunger();
+	static void drawSpeed();
+	static void drawOurStatus();
+	static void drawCombatIndicator();
+	static void drawHiddenVision();
+		static void drawHostilePlayers();
+		//basic functions
+		
+	
+		//bools
+	static bool bDrawHostilePlayers;
+	static bool bDrawHiddenVision;
+		//bools
 
+	// E1L TERRATORY
 	static float lastPosX;
 	static float lastPosY;
 

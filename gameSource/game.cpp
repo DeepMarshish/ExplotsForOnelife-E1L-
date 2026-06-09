@@ -1,9 +1,9 @@
-int versionNumber = 436;
+int versionNumber = 1;
 int dataVersionNumber = 0;
 
 int binVersionNumber = versionNumber;
 
-const char *yumSubVersion = ".2";
+const char *yumSubVersion = ".5";
 // The last data version number released _before_ this client version. Make sure
 // to update this with every upstream versionNumber bump! Tracking this allows
 // us to accurately apply data updates when users "leapfrog" a data update with
@@ -14,7 +14,7 @@ int yumExpectedDataVersionNumber = 435;
 // Please use this tag to describe your client honestly and uniquely
 // client_official is reserved for the unmodded client
 // do not include whitespace in your tag
-const char *clientTag = "client_yumlife";
+const char *clientTag = "client_e1l";
 
 
 
@@ -297,7 +297,7 @@ static char *windowTitle = NULL;
 const char *getWindowTitle() {
 	if (windowTitle == NULL) {
 		char title[256] = "";
-		snprintf(title, sizeof(title), "YumLife v%d%s", binVersionNumber, yumSubVersion);
+		snprintf(title, sizeof(title), "E1L v%d%s", binVersionNumber, yumSubVersion);
 		windowTitle = strdup(title);
 	}
     return windowTitle;
@@ -2239,13 +2239,13 @@ void drawFrame( char inUpdate ) {
                         getServerAddressPage->getResponseInt( 
                             "requiredVersionNumber" );
                     
-                    // YumLife: Pretend we're an old client for the purposes of
+                    // E1L: Pretend we're an old client for the purposes of
                     // the updater if we see old data files. This ensures data
                     // updates don't get skipped when the user installs a new
                     // client version without having run the old version first.
                     int versionNumber = ::versionNumber;
                     if (!isAHAP && yumExpectedDataVersionNumber > dataVersionNumber) {
-                        printf("YumLife: Detected old data files! Pretending to be version %d\n", dataVersionNumber);
+                        printf("E1L: Detected old data files! Pretending to be version %d\n", dataVersionNumber);
                         versionNumber = dataVersionNumber;
                     }
 
@@ -2394,6 +2394,7 @@ void drawFrame( char inUpdate ) {
 
                 currentGamePage->base_makeActive( true );
                 }
+                
             else if( livingLifePage->checkSignal( "reconnectFailed" ) ) {
                 lastScreenViewCenter.x = 0;
                 lastScreenViewCenter.y = 0;
@@ -2404,6 +2405,20 @@ void drawFrame( char inUpdate ) {
                 currentGamePage = existingAccountPage;
                 
                 existingAccountPage->setStatus( "reconnectFailed", true );
+
+                existingAccountPage->setStatusPosition( true );
+
+                currentGamePage->base_makeActive( true );
+                }
+            else if( livingLifePage->checkSignal( "home" ) ) {
+                lastScreenViewCenter.x = 0;
+                lastScreenViewCenter.y = 0;
+
+                setViewCenterPosition( lastScreenViewCenter.x, 
+                                       lastScreenViewCenter.y );
+                
+                currentGamePage = existingAccountPage;
+                
 
                 existingAccountPage->setStatusPosition( true );
 
@@ -2543,23 +2558,23 @@ void drawFrame( char inUpdate ) {
                 showReconnectPage();
                 }
             else if( livingLifePage->checkSignal( "reborn" ) ) {
-                // YumLife mod
+                // E1L mod
                 if( userTwinCode != NULL ) {
                     delete [] userTwinCode;
                     userTwinCode = NULL;
                     }
-                userTwinCode = stringDuplicate( "yumlife_reborn" );
+                userTwinCode = stringDuplicate( "E1L_reborn" );
                 userTwinCount = 1;
                 startConnecting();
                 notLiving = true;
                 }
             else if( livingLifePage->checkSignal( "tutorial" ) ) {
-                // YumLife mod
+                // E1L mod
                 if( userTwinCode != NULL ) {
                     delete [] userTwinCode;
                     userTwinCode = NULL;
                     }
-                userTwinCode = stringDuplicate( "yumlife_tutorial" );
+                userTwinCode = stringDuplicate( "E1L_tutorial" );
                 userTwinCount = 1;
                 livingLifePage->runTutorial( 1 );
                 startConnecting();

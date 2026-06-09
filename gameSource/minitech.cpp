@@ -993,11 +993,11 @@ void minitech::updateDrawTwoTech() {
 		
 		recWidth = paddingX + 7*iconSize + paddingX;
 		recHeight = paddingY/2 + lineHeight/2 + paddingY/2;
-		posLT.y = posLT.y + recHeight + (60); //panel height = 60
+		posLT.y = posLT.y + recHeight + (96.3) * guiScale; ; //panel height = 60
 		posLT.x = posLT.x - recWidth;
 		doublePair posCenter = {posLT.x + recWidth / 2, posLT.y - recHeight / 2};
 		doublePair posBR = {posLT.x + recWidth, posLT.y - recHeight};
-		setDrawColor( 0, 0, 0, 0.8 );
+		setDrawColor(0.5725, 0, 0, 0.6f);
 		drawRect( posCenter, recWidth/2, recHeight/2);
 		
 		drawStr("[+] CRAFTING GUIDE", posCenter, "tinyHandwritten", false);
@@ -1021,10 +1021,10 @@ void minitech::updateDrawTwoTech() {
 		
 		recWidth = paddingX + 7*iconSize + paddingX;
 		recHeight = paddingY + 1*iconSize + paddingY;
-		posLT.y = posLT.y + recHeight + (60); //panel height = 60
+		posLT.y = posLT.y + recHeight + (96.3) * guiScale; ; //panel height = 60
 		posLT.x = posLT.x - recWidth;
 		doublePair posCenter = {posLT.x + recWidth / 2, posLT.y - recHeight / 2};
-		setDrawColor( 0, 0, 0, 0.8 );
+		setDrawColor( 0, 0, 0, 0.6 );
 		drawRect( posCenter, recWidth/2, recHeight/2);
 		drawStr("NO RECIPES FOUND :)", posCenter, "tinyHandwritten", false);
 		
@@ -1047,11 +1047,11 @@ void minitech::updateDrawTwoTech() {
 		recWidth = paddingX + 7*iconSize + paddingX;
 		recHeight = paddingY + (numOfLines-1)*lineSpacing + numOfLines*iconSize + buttonHeight + paddingY;
 		
-		posLT.y = posLT.y + recHeight + (60); //panel height = 60
+		posLT.y = posLT.y + recHeight + (95.9) * guiScale; ; //panel height = 60
 		posLT.x = posLT.x - recWidth;
 		
 		doublePair posCenter = {posLT.x + recWidth / 2, posLT.y - recHeight / 2};
-		setDrawColor( 0, 0, 0, 0.8 );
+		setDrawColor( 0, 0, 0, 0.6 );
 		drawRect( posCenter, recWidth/2, recHeight/2);
 		
 		doublePair posLineLCen = {
@@ -1393,7 +1393,7 @@ void minitech::updateDrawTwoTech() {
 	float headerHeight = (paddingY + iconSize + barHeight + paddingY);
 	doublePair headerLT = {posLT.x, posLT.y + separatorHeight + headerHeight};
 	doublePair headerCen = {headerLT.x + headerWidth / 2, headerLT.y - headerHeight / 2};
-	setDrawColor( 0, 0, 0, 0.8 );
+	setDrawColor( 0, 0, 0, 0.6 );
 	drawRect( headerCen, headerWidth/2, headerHeight/2);
 
 	string useStr = "HOW DO I USE:";

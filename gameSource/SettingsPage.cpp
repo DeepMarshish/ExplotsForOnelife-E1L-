@@ -315,7 +315,7 @@ void SettingsPage::actionPerformed( GUIComponent *inTarget ) {
         int numDirs = 6;
 
         int numDeleted = 0;
-        printf( "YumLife: Deleting cache files...\n" );
+        printf( "E1L: Deleting cache files...\n" );
         
         for( int d = 0; d < numDirs; d++ ) {
             File dir( NULL, cacheDirs[d] );

@@ -22,14 +22,14 @@ static struct {
     Options option;
     const char *label;
 } optionInfo[] = {
-    { yumRebirthComponent::BIOME_ARCTIC,      "ARCTIC"      },
-    { yumRebirthComponent::BIOME_LANGUAGE,    "LANGUAGE"    },
-    { yumRebirthComponent::BIOME_JUNGLE,      "JUNGLE"      },
-    { yumRebirthComponent::BIOME_DESERT,      "DESERT"      },
+    { yumRebirthComponent::BIOME_ARCTIC,      "GINGER"      },
+    { yumRebirthComponent::BIOME_LANGUAGE,    "WHITE"    },
+    { yumRebirthComponent::BIOME_JUNGLE,      "BROWN"      },
+    { yumRebirthComponent::BIOME_DESERT,      "BLACK"      },
     { yumRebirthComponent::GENDER_FEMALE,     "FEMALE"      },
     { yumRebirthComponent::GENDER_MALE,       "MALE"        },
-    { yumRebirthComponent::REGION_MAIN,       "MAIN AREA"   },
-    { yumRebirthComponent::REGION_DONKEYTOWN, "DONKEY TOWN" }
+    { yumRebirthComponent::REGION_MAIN,       "MAINLAND"   },
+    { yumRebirthComponent::REGION_DONKEYTOWN, "DONKEYTOWN" }
 };
 
 std::unordered_map<Options, const char*> optionLabelMapping = [] {

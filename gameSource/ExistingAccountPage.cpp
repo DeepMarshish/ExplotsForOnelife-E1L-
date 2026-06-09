@@ -79,7 +79,7 @@ ExistingAccountPage::ExistingAccountPage()
           mPasteEmailButton( mainFont, 0, 68, translate( "paste" ), 'v', 'V' ),
           mDisableCustomServerButton( mainFont, 0, 220, 
                                       translate( "disableCustomServer" ) ),
-          mLoginButton( mainFont, 400, 0, translate( "loginButton" ) ),
+          mLoginButton( mainFont, 470, -240, "PLAY GAME [SENDS IP - CAUTION]"),
           mFriendsButton( mainFont, 400, -80, translate( "friendsButton" ) ),
           mGenesButton( mainFont, 550, 0, translate( "genesButton" ) ),
           mFamilyTreesButton( mainFont, 320, -160, translate( "familyTrees" ) ),
@@ -137,10 +137,10 @@ ExistingAccountPage::ExistingAccountPage()
     setButtonStyle( &mDisableCustomServerButton );
     
     // draw attention to login button
-    mLoginButton.setNoHoverColor( 1, 1, 0, 1 );
-    mLoginButton.setHoverColor( 1, 1, 0, 1 );
-    mLoginButton.setDragOverColor( 1, 1, 0, 1 );
-    mLoginButton.setHoverBorderColor( 1, 1, 0, 1 );
+    mLoginButton.setNoHoverColor( 0, 1, 1, 1 );
+    mLoginButton.setHoverColor( 0, 0, 1, 1 );
+    mLoginButton.setDragOverColor( 0, 1, 1, 1 );
+    mLoginButton.setHoverBorderColor( 0, 1, 1, 1 );
     
     
     mFields[0] = &mEmailField;
@@ -368,7 +368,7 @@ void ExistingAccountPage::makeActive( char inFresh ) {
         mReviewButton.setLabelText( translate( "postReviewButton" ) );
         }
 
-    // YumLife: always show review button
+    // E1L: always show review button
     mReviewButton.setVisible( true );
 
     if( SettingsManager::getIntSetting( "useSteamUpdate", 0 ) ) {
@@ -858,7 +858,7 @@ void ExistingAccountPage::draw( doublePair inViewCenter,
             mOholCurseButton.setVisible( true );
         }
 
-        // YumLife: show window title with version info
+        // E1L: show window title with version info
         pos = mServicesButton.getPosition();
         pos.y += 35;
         pos.x = 0;
